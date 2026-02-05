@@ -383,6 +383,10 @@ function CheckoutModal({ onClose, onSuccess }) {
   const [inventoryItems, setInventoryItems] = useState([]);
   const [rowSearch, setRowSearch] = useState({});
   const reasonValue = watch("reasonSelect");
+  const itemsValue = watch("items");
+  const totalItems = itemsValue?.length || 0;
+  const totalQuantity =
+    itemsValue?.reduce((sum, it) => sum + (Number(it.quantity) || 0), 0) || 0;
 
   useEffect(() => {
     const fetchInventory = async () => {
@@ -434,6 +438,62 @@ function CheckoutModal({ onClose, onSuccess }) {
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 mt-4">
+          <div className="rounded-md border bg-muted/40 p-4 space-y-4">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <ArrowRightLeft className="h-5 w-5 text-primary" />
+                <div>
+                  <p className="text-xs text-muted-foreground">Source</p>
+                  <p className="font-medium">JAAN Warehouse</p>
+                </div>
+              </div>
+              <div className="hidden md:flex flex-col items-end text-xs text-muted-foreground">
+                <span>
+                  Items:{" "}
+                  <span className="font-semibold text-foreground">
+                    {totalItems}
+                  </span>
+                </span>
+                <span>
+                  Total Qty:{" "}
+                  <span className="font-semibold text-foreground">
+                    {totalQuantity}
+                  </span>
+                </span>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Reason</Label>
+              <Select onValueChange={(val) => setValue("reasonSelect", val)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select Reason" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Bar">Bar</SelectItem>
+                  <SelectItem value="Open Bottle">Open Bottle</SelectItem>
+                  <SelectItem value="other">Other (Manual Input)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {reasonValue === "other" && (
+              <div className="space-y-2">
+                <Label htmlFor="reasonCustom">Custom Reason</Label>
+                <Input
+                  id="reasonCustom"
+                  {...register("reasonCustom", {
+                    required: "Reason is required",
+                  })}
+                  placeholder="Enter reason"
+                />
+                {errors.reasonCustom && (
+                  <p className="text-sm text-red-500">
+                    {errors.reasonCustom.message}
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+
           <div className="space-y-4">
             <div className="flex justify-between items-center">
               <Label className="text-base font-semibold">
@@ -452,9 +512,12 @@ function CheckoutModal({ onClose, onSuccess }) {
             {fields.map((field, index) => (
               <div
                 key={field.id}
-                className="grid grid-cols-12 gap-4 items-end border p-4 rounded-md"
+                className="grid grid-cols-12 gap-4 items-end rounded-md border bg-background/80 dark:bg-zinc-900 p-4 shadow-sm"
               >
                 <div className="col-span-7 space-y-2">
+                  <p className="text-xs font-medium text-muted-foreground">
+                    Item {index + 1}
+                  </p>
                   <Label>Item (Search from JAAN inventory)</Label>
                   <Select
                     onValueChange={(val) =>
@@ -549,50 +612,35 @@ function CheckoutModal({ onClose, onSuccess }) {
             ))}
           </div>
 
-          <div className="space-y-2">
-            <Label>Reason</Label>
-            <Select onValueChange={(val) => setValue("reasonSelect", val)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select Reason" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Bar">Bar</SelectItem>
-                <SelectItem value="Open Bottle">Open Bottle</SelectItem>
-                <SelectItem value="other">Other (Manual Input)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {reasonValue === "other" && (
-            <div className="space-y-2">
-              <Label htmlFor="reasonCustom">Custom Reason</Label>
-              <Input
-                id="reasonCustom"
-                {...register("reasonCustom", {
-                  required: "Reason is required",
-                })}
-                placeholder="Enter reason"
-              />
-              {errors.reasonCustom && (
-                <p className="text-sm text-red-500">
-                  {errors.reasonCustom.message}
-                </p>
-              )}
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 pt-4 border-t">
+            <div className="text-xs text-muted-foreground">
+              <span>
+                Items:{" "}
+                <span className="font-semibold text-foreground">
+                  {totalItems}
+                </span>
+              </span>
+              <span className="mx-2">•</span>
+              <span>
+                Total Qty:{" "}
+                <span className="font-semibold text-foreground">
+                  {totalQuantity}
+                </span>
+              </span>
             </div>
-          )}
-
-          <div className="flex justify-end pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              className="mr-2"
-              onClick={onClose}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={loading}>
-              {loading ? "Processing..." : "Checkout"}
-            </Button>
+            <div className="flex justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                className="md:mr-2"
+                onClick={onClose}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={loading}>
+                {loading ? "Processing..." : "Checkout"}
+              </Button>
+            </div>
           </div>
         </form>
       </DialogContent>
