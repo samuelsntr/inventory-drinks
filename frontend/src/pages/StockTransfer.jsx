@@ -27,7 +27,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { toast } from "sonner";
-import { Plus, Trash2, ArrowRightLeft, Search } from "lucide-react";
+import { Plus, Trash2, ArrowRightLeft, Search, Calendar as CalendarIcon } from "lucide-react";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 import PaginationControls from "@/components/PaginationControls";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useAuth } from "@/contexts/AuthContext";
@@ -45,10 +47,11 @@ export default function StockTransfer() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const debouncedSearch = useDebounce(search, 500);
+  const [dateRange, setDateRange] = useState({ from: null, to: null });
 
   useEffect(() => {
     fetchTransfers();
-  }, [debouncedSearch, page]);
+  }, [debouncedSearch, page, dateRange?.from, dateRange?.to]);
 
   const fetchTransfers = async () => {
     try {
@@ -58,6 +61,8 @@ export default function StockTransfer() {
           search: debouncedSearch,
           page: page,
           limit: 10,
+          startDate: dateRange?.from ? dateRange.from.toISOString() : undefined,
+          endDate: dateRange?.to ? dateRange.to.toISOString() : undefined,
         },
       });
       setTransfers(res.data.items);
@@ -83,9 +88,14 @@ export default function StockTransfer() {
   return (
     <DashboardLayout>
       <div className="p-6 space-y-6">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <h1 className="text-3xl font-bold tracking-tight">Stock Transfers</h1>
-          <div className="flex items-center gap-2 w-full md:w-auto">
+        <div className="flex flex-col gap-3">
+          <div className="flex justify-between items-center">
+            <h1 className="text-3xl font-bold tracking-tight">Stock Transfers</h1>
+            <Button onClick={() => setShowModal(true)}>
+              <ArrowRightLeft className="mr-2 h-4 w-4" /> New Transfer
+            </Button>
+          </div>
+          <div className="flex flex-col md:flex-row gap-2">
             <Input
               placeholder="Search item code or name..."
               value={search}
@@ -95,9 +105,28 @@ export default function StockTransfer() {
               }}
               className="w-full md:w-64"
             />
-            <Button onClick={() => setShowModal(true)}>
-              <ArrowRightLeft className="mr-2 h-4 w-4" /> New Transfer
-            </Button>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="w-full md:w-64 justify-start text-left font-normal">
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {dateRange?.from && dateRange?.to
+                    ? `${new Date(dateRange.from).toLocaleDateString()} - ${new Date(dateRange.to).toLocaleDateString()}`
+                    : "Filter by date range"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  initialFocus
+                  mode="range"
+                  selected={dateRange}
+                  onSelect={(range) => {
+                    setDateRange(range || { from: null, to: null });
+                    setPage(1);
+                  }}
+                  numberOfMonths={2}
+                />
+              </PopoverContent>
+            </Popover>
           </div>
         </div>
 
