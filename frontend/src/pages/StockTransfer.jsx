@@ -27,9 +27,21 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { toast } from "sonner";
-import { Plus, Trash2, ArrowRightLeft, Search, Calendar as CalendarIcon } from "lucide-react";
-import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import {
+  Plus,
+  Trash2,
+  ArrowRightLeft,
+  Search,
+  Calendar as CalendarIcon,
+} from "lucide-react";
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
+import { Badge } from "@/components/ui/badge";
+import { formatDate } from "@/lib/formatDate";
 import PaginationControls from "@/components/PaginationControls";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useAuth } from "@/contexts/AuthContext";
@@ -90,7 +102,9 @@ export default function StockTransfer() {
       <div className="p-6 space-y-6">
         <div className="flex flex-col gap-3">
           <div className="flex justify-between items-center">
-            <h1 className="text-3xl font-bold tracking-tight">Stock Transfers</h1>
+            <h1 className="text-3xl font-bold tracking-tight">
+              Stock Transfers
+            </h1>
             <Button onClick={() => setShowModal(true)}>
               <ArrowRightLeft className="mr-2 h-4 w-4" /> New Transfer
             </Button>
@@ -107,7 +121,10 @@ export default function StockTransfer() {
             />
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant="outline" className="w-full md:w-64 justify-start text-left font-normal">
+                <Button
+                  variant="outline"
+                  className="w-full md:w-64 justify-start text-left font-normal"
+                >
                   <CalendarIcon className="mr-2 h-4 w-4" />
                   {dateRange?.from && dateRange?.to
                     ? `${new Date(dateRange.from).toLocaleDateString()} - ${new Date(dateRange.to).toLocaleDateString()}`
@@ -127,6 +144,12 @@ export default function StockTransfer() {
                 />
               </PopoverContent>
             </Popover>
+            {dateRange?.from && dateRange?.to && (
+              <Badge variant="outline" className="h-9 px-3">
+                <CalendarIcon className="mr-1" />
+                {formatDate(dateRange.from)} - {formatDate(dateRange.to)}
+              </Badge>
+            )}
           </div>
         </div>
 

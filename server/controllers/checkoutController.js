@@ -90,7 +90,7 @@ exports.checkoutItem = async (req, res) => {
 
 exports.getCheckoutHistory = async (req, res) => {
   try {
-    const { search, page = 1, limit = 10 } = req.query;
+    const { search, page = 1, limit = 10, startDate, endDate } = req.query;
     const offset = (page - 1) * limit;
 
     const whereClause = {};
@@ -99,6 +99,19 @@ exports.getCheckoutHistory = async (req, res) => {
         { reason: { [Op.like]: `%${search}%` } },
         { items: { [Op.like]: `%${search}%` } },
       ];
+    }
+    if (startDate || endDate) {
+      const start = startDate ? new Date(startDate) : null;
+      const end = endDate ? new Date(endDate) : null;
+      if (start) start.setHours(0, 0, 0, 0);
+      if (end) end.setHours(23, 59, 59, 999);
+      if (start && end) {
+        whereClause.createdAt = { [Op.between]: [start, end] };
+      } else if (start) {
+        whereClause.createdAt = { [Op.gte]: start };
+      } else if (end) {
+        whereClause.createdAt = { [Op.lte]: end };
+      }
     }
     const { count, rows } = await CheckoutBatch.findAndCountAll({
       where: whereClause,
