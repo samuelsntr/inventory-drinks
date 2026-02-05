@@ -390,6 +390,10 @@ function TransferModal({ onClose, onSuccess }) {
   const [rowSearch, setRowSearch] = useState({});
   const fromWarehouse = watch("fromWarehouse");
   const toWarehouse = watch("toWarehouse");
+  const itemsValue = watch("items");
+  const totalItems = itemsValue?.length || 0;
+  const totalQuantity =
+    itemsValue?.reduce((sum, it) => sum + (Number(it.quantity) || 0), 0) || 0;
 
   // Fetch inventory when warehouse changes or search query changes
   useEffect(() => {
@@ -437,36 +441,65 @@ function TransferModal({ onClose, onSuccess }) {
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 mt-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>From Warehouse</Label>
-              <Select
-                value={fromWarehouse}
-                onValueChange={(val) => setValue("fromWarehouse", val)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select Source" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="JAAN">JAAN</SelectItem>
-                  <SelectItem value="DW">DW</SelectItem>
-                </SelectContent>
-              </Select>
+          <div className="rounded-md border bg-muted/40 p-4 space-y-4">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <ArrowRightLeft className="h-5 w-5 text-primary" />
+                <div>
+                  <p className="text-xs text-muted-foreground">Route</p>
+                  <p className="font-medium">
+                    {fromWarehouse || "Select source"}
+                    <span className="mx-1">→</span>
+                    {toWarehouse || "Select destination"}
+                  </p>
+                </div>
+              </div>
+              <div className="hidden md:flex flex-col items-end text-xs text-muted-foreground">
+                <span>
+                  Items:{" "}
+                  <span className="font-semibold text-foreground">
+                    {totalItems}
+                  </span>
+                </span>
+                <span>
+                  Total Qty:{" "}
+                  <span className="font-semibold text-foreground">
+                    {totalQuantity}
+                  </span>
+                </span>
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label>To Warehouse</Label>
-              <Select
-                value={toWarehouse}
-                onValueChange={(val) => setValue("toWarehouse", val)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select Destination" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="JAAN">JAAN</SelectItem>
-                  <SelectItem value="DW">DW</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>From Warehouse</Label>
+                <Select
+                  value={fromWarehouse}
+                  onValueChange={(val) => setValue("fromWarehouse", val)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select Source" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="JAAN">JAAN</SelectItem>
+                    <SelectItem value="DW">DW</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>To Warehouse</Label>
+                <Select
+                  value={toWarehouse}
+                  onValueChange={(val) => setValue("toWarehouse", val)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select Destination" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="JAAN">JAAN</SelectItem>
+                    <SelectItem value="DW">DW</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
 
@@ -489,9 +522,12 @@ function TransferModal({ onClose, onSuccess }) {
             {fields.map((field, index) => (
               <div
                 key={field.id}
-                className="grid grid-cols-12 gap-4 items-end border p-4 rounded-md"
+                className="grid grid-cols-12 gap-4 items-end rounded-md border bg-background/80 dark:bg-zinc-900 p-4 shadow-sm"
               >
                 <div className="col-span-7 space-y-2">
+                  <p className="text-xs font-medium text-muted-foreground">
+                    Item {index + 1}
+                  </p>
                   <Label>Item (Search)</Label>
                   <Select
                     onValueChange={(val) =>
@@ -575,21 +611,38 @@ function TransferModal({ onClose, onSuccess }) {
             ))}
           </div>
 
-          <div className="flex justify-end pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              className="mr-2"
-              onClick={onClose}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              disabled={loading || !fromWarehouse || !toWarehouse}
-            >
-              {loading ? "Processing..." : "Transfer Stock"}
-            </Button>
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 pt-4 border-t">
+            <div className="text-xs text-muted-foreground">
+              <span>
+                Items:{" "}
+                <span className="font-semibold text-foreground">
+                  {totalItems}
+                </span>
+              </span>
+              <span className="mx-2">•</span>
+              <span>
+                Total Qty:{" "}
+                <span className="font-semibold text-foreground">
+                  {totalQuantity}
+                </span>
+              </span>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                className="md:mr-2"
+                onClick={onClose}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={loading || !fromWarehouse || !toWarehouse}
+              >
+                {loading ? "Processing..." : "Transfer Stock"}
+              </Button>
+            </div>
           </div>
         </form>
       </DialogContent>
