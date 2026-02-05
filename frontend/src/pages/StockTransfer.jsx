@@ -38,6 +38,7 @@ export default function StockTransfer() {
   const [transfers, setTransfers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [detailBatch, setDetailBatch] = useState(null);
 
   // Search & Pagination
   const [search, setSearch] = useState("");
@@ -72,10 +73,10 @@ export default function StockTransfer() {
     (id) => axios.delete(`/transfer/${id}`),
     {
       onSuccess: fetchTransfers,
-      successMessage: "Transfer record deleted",
+      successMessage: "Transfer record deleted and stock reverted",
       title: "Delete Transfer Record",
       description:
-        "Are you sure? This will delete the history record but NOT revert the stock.",
+        "Are you sure? This will move stock back to the source and delete the record.",
     },
   );
 
@@ -105,11 +106,10 @@ export default function StockTransfer() {
             <TableHeader>
               <TableRow>
                 <TableHead>Date</TableHead>
-                <TableHead>Item Code</TableHead>
-                <TableHead>Item Name</TableHead>
                 <TableHead>From</TableHead>
                 <TableHead>To</TableHead>
-                <TableHead>Quantity</TableHead>
+                <TableHead>Items Count</TableHead>
+                <TableHead>Total Quantity</TableHead>
                 <TableHead>Transferred By</TableHead>
                 {user?.role === "super admin" && (
                   <TableHead className="text-right">Actions</TableHead>
@@ -117,29 +117,35 @@ export default function StockTransfer() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {transfers.map((transfer) => (
-                <TableRow key={transfer.id}>
+              {transfers.map((batch) => (
+                <TableRow key={batch.id}>
                   <TableCell>
-                    {new Date(transfer.createdAt).toLocaleString()}
+                    {new Date(batch.createdAt).toLocaleString()}
                   </TableCell>
-                  <TableCell className="font-medium">
-                    {transfer.itemCode}
-                  </TableCell>
-                  <TableCell>{transfer.itemName}</TableCell>
-                  <TableCell>{transfer.fromWarehouse}</TableCell>
-                  <TableCell>{transfer.toWarehouse}</TableCell>
-                  <TableCell>{transfer.quantity}</TableCell>
-                  <TableCell>{transfer.user?.username}</TableCell>
+                  <TableCell>{batch.fromWarehouse}</TableCell>
+                  <TableCell>{batch.toWarehouse}</TableCell>
+                  <TableCell>{batch.totalItems}</TableCell>
+                  <TableCell>{batch.totalQuantity}</TableCell>
+                  <TableCell>{batch.user?.username}</TableCell>
                   {user?.role === "super admin" && (
                     <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
-                        onClick={() => confirmDelete(transfer.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setDetailBatch(batch)}
+                        >
+                          Details
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
+                          onClick={() => confirmDelete(batch.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   )}
                 </TableRow>
@@ -176,6 +182,130 @@ export default function StockTransfer() {
           />
         )}
 
+        {detailBatch && (
+          <Dialog open={true} onOpenChange={() => setDetailBatch(null)}>
+            <DialogContent className="sm:max-w-[40vw] max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Transfer Details</DialogTitle>
+              </DialogHeader>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 mb-4">
+                <div className="flex items-center">
+                  <span className="text-sm text-muted-foreground w-40">
+                    From
+                  </span>
+                  <span className="font-medium">
+                    {detailBatch.fromWarehouse}
+                  </span>
+                </div>
+                <div className="flex items-center">
+                  <span className="text-sm text-muted-foreground w-40">To</span>
+                  <span className="font-medium">{detailBatch.toWarehouse}</span>
+                </div>
+                <div className="flex items-center">
+                  <span className="text-sm text-muted-foreground w-40">
+                    Transferred By
+                  </span>
+                  <span className="font-medium">
+                    {detailBatch.user?.username || "-"}
+                  </span>
+                </div>
+                <div className="flex items-center">
+                  <span className="text-sm text-muted-foreground w-40">
+                    Date
+                  </span>
+                  <span className="font-medium">
+                    {detailBatch.createdAt
+                      ? new Date(detailBatch.createdAt).toLocaleString()
+                      : "-"}
+                  </span>
+                </div>
+                <div className="flex items-center">
+                  <span className="text-sm text-muted-foreground w-40">
+                    Items Count
+                  </span>
+                  <span className="font-medium">
+                    {detailBatch.totalItems ?? (detailBatch.items?.length || 0)}
+                  </span>
+                </div>
+                <div className="flex items-center">
+                  <span className="text-sm text-muted-foreground w-40">
+                    Total Quantity
+                  </span>
+                  <span className="font-medium">
+                    {detailBatch.totalQuantity ??
+                      (detailBatch.items?.reduce(
+                        (sum, it) => sum + (it.quantity || 0),
+                        0,
+                      ) ||
+                        0)}
+                  </span>
+                </div>
+              </div>
+              <div className="rounded-md border bg-white dark:bg-zinc-950">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Item Code</TableHead>
+                      <TableHead>Item Name</TableHead>
+                      <TableHead>Quantity</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {detailBatch.items && detailBatch.items.length > 0 ? (
+                      <>
+                        {[...(detailBatch.items || [])]
+                          .sort((a, b) =>
+                            String(a.itemCode).localeCompare(
+                              String(b.itemCode),
+                            ),
+                          )
+                          .map((it, idx) => (
+                            <TableRow key={`${it.itemCode}-${idx}`}>
+                              <TableCell className="font-medium">
+                                {it.itemCode}
+                              </TableCell>
+                              <TableCell>{it.itemName}</TableCell>
+                              <TableCell>{it.quantity}</TableCell>
+                            </TableRow>
+                          ))}
+                        <TableRow>
+                          <TableCell
+                            colSpan={2}
+                            className="text-right font-medium"
+                          >
+                            Total
+                          </TableCell>
+                          <TableCell className="font-medium">
+                            {detailBatch.totalQuantity ??
+                              detailBatch.items.reduce(
+                                (sum, it) => sum + (it.quantity || 0),
+                                0,
+                              )}
+                          </TableCell>
+                        </TableRow>
+                      </>
+                    ) : (
+                      <TableRow>
+                        <TableCell
+                          colSpan={3}
+                          className="text-center h-20 text-muted-foreground"
+                        >
+                          No items
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+              <div className="flex justify-end pt-4">
+                <Button variant="outline" onClick={() => setDetailBatch(null)}>
+                  Close
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
+
         <DeleteDialog />
       </div>
     </DashboardLayout>
@@ -192,8 +322,8 @@ function TransferModal({ onClose, onSuccess }) {
     formState: { errors },
   } = useForm({
     defaultValues: {
-      fromWarehouse: "",
-      toWarehouse: "",
+      fromWarehouse: "DW",
+      toWarehouse: "JAAN",
       items: [{ itemCode: "", quantity: 1 }],
     },
   });
@@ -205,9 +335,9 @@ function TransferModal({ onClose, onSuccess }) {
 
   const [loading, setLoading] = useState(false);
   const [inventoryItems, setInventoryItems] = useState([]);
-  const [searchQuery, setSearchQuery] = useState("");
-  const debouncedItemSearch = useDebounce(searchQuery, 300);
+  const [rowSearch, setRowSearch] = useState({});
   const fromWarehouse = watch("fromWarehouse");
+  const toWarehouse = watch("toWarehouse");
 
   // Fetch inventory when warehouse changes or search query changes
   useEffect(() => {
@@ -217,8 +347,7 @@ function TransferModal({ onClose, onSuccess }) {
           const res = await axios.get("/inventory", {
             params: {
               warehouse: fromWarehouse,
-              search: debouncedItemSearch,
-              limit: 20, // Limit results for dropdown
+              limit: 1000, // Limit results for dropdown
             },
           });
           setInventoryItems(res.data.items);
@@ -227,10 +356,12 @@ function TransferModal({ onClose, onSuccess }) {
         }
       };
       fetchInventory();
+      setRowSearch({});
     } else {
       setInventoryItems([]);
+      setRowSearch({});
     }
-  }, [fromWarehouse, debouncedItemSearch]);
+  }, [fromWarehouse]);
 
   const onSubmit = async (data) => {
     try {
@@ -248,7 +379,7 @@ function TransferModal({ onClose, onSuccess }) {
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[50vw] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>New Stock Transfer</DialogTitle>
         </DialogHeader>
@@ -257,7 +388,10 @@ function TransferModal({ onClose, onSuccess }) {
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>From Warehouse</Label>
-              <Select onValueChange={(val) => setValue("fromWarehouse", val)}>
+              <Select
+                value={fromWarehouse}
+                onValueChange={(val) => setValue("fromWarehouse", val)}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select Source" />
                 </SelectTrigger>
@@ -269,7 +403,10 @@ function TransferModal({ onClose, onSuccess }) {
             </div>
             <div className="space-y-2">
               <Label>To Warehouse</Label>
-              <Select onValueChange={(val) => setValue("toWarehouse", val)}>
+              <Select
+                value={toWarehouse}
+                onValueChange={(val) => setValue("toWarehouse", val)}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select Destination" />
                 </SelectTrigger>
@@ -317,27 +454,43 @@ function TransferModal({ onClose, onSuccess }) {
                       <div className="p-2 sticky top-0 bg-popover z-10">
                         <Input
                           placeholder="Search item..."
-                          value={searchQuery}
-                          onChange={(e) => setSearchQuery(e.target.value)}
+                          value={rowSearch[field.id] ?? ""}
+                          onChange={(e) =>
+                            setRowSearch((prev) => ({
+                              ...prev,
+                              [field.id]: e.target.value,
+                            }))
+                          }
                           onKeyDown={(e) => e.stopPropagation()} // Prevent closing select on space
                           className="mb-2 h-8"
                         />
                       </div>
                       <div className="max-h-[200px] overflow-y-auto">
-                        {inventoryItems.map((item) => (
-                          <SelectItem
-                            key={item.id}
-                            value={item.code}
-                            disabled={item.quantity <= 0}
-                          >
-                            {item.code} - {item.name} (Qty: {item.quantity})
-                          </SelectItem>
-                        ))}
-                        {inventoryItems.length === 0 && (
-                          <div className="p-2 text-sm text-muted-foreground text-center">
-                            No items found
-                          </div>
-                        )}
+                        {(() => {
+                          const q = (rowSearch[field.id] || "").toLowerCase();
+                          const filtered = inventoryItems.filter((item) => {
+                            if (!q) return true;
+                            return (
+                              item.code.toLowerCase().includes(q) ||
+                              item.name.toLowerCase().includes(q)
+                            );
+                          });
+                          return filtered.length > 0 ? (
+                            filtered.map((item) => (
+                              <SelectItem
+                                key={item.id}
+                                value={item.code}
+                                disabled={item.quantity <= 0}
+                              >
+                                {item.code} - {item.name} (Qty: {item.quantity})
+                              </SelectItem>
+                            ))
+                          ) : (
+                            <div className="p-2 text-sm text-muted-foreground text-center">
+                              No items found
+                            </div>
+                          );
+                        })()}
                       </div>
                     </SelectContent>
                   </Select>
@@ -379,7 +532,10 @@ function TransferModal({ onClose, onSuccess }) {
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={loading}>
+            <Button
+              type="submit"
+              disabled={loading || !fromWarehouse || !toWarehouse}
+            >
               {loading ? "Processing..." : "Transfer Stock"}
             </Button>
           </div>

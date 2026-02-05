@@ -1,12 +1,12 @@
 const db = require("../models");
 const InventoryItem = db.InventoryItem;
-const StockTransfer = db.StockTransfer;
+const StockTransferBatch = db.StockTransferBatch;
 const { Op } = require("sequelize");
 
 exports.transferStock = async (req, res) => {
   const t = await db.sequelize.transaction();
   try {
-    const { items, fromWarehouse, toWarehouse } = req.body; // items is array of { itemCode, quantity }
+    const { items, fromWarehouse, toWarehouse } = req.body;
 
     if (!items || items.length === 0) {
         await t.rollback();
@@ -18,7 +18,7 @@ exports.transferStock = async (req, res) => {
         return res.status(400).json({ message: "Cannot transfer to the same warehouse" });
     }
 
-    const transferRecords = [];
+    const normalizedItems = [];
 
     for (const item of items) {
         const { itemCode, quantity } = item;
@@ -27,7 +27,6 @@ exports.transferStock = async (req, res) => {
             throw new Error(`Quantity must be positive for item ${itemCode}`);
         }
 
-        // 1. Find source item
         const sourceItem = await InventoryItem.findOne({
           where: { code: itemCode, warehouse: fromWarehouse },
           transaction: t
@@ -41,7 +40,6 @@ exports.transferStock = async (req, res) => {
           throw new Error(`Insufficient quantity for ${itemCode} in ${fromWarehouse}`);
         }
 
-        // 2. Find or create destination item
         let destItem = await InventoryItem.findOne({
           where: { code: itemCode, warehouse: toWarehouse },
           transaction: t
@@ -52,7 +50,6 @@ exports.transferStock = async (req, res) => {
           destItem.userId = req.session.user.id;
           await destItem.save({ transaction: t });
         } else {
-          // Create new item in destination
           destItem = await InventoryItem.create({
             name: sourceItem.name,
             code: sourceItem.code,
@@ -67,26 +64,32 @@ exports.transferStock = async (req, res) => {
           }, { transaction: t });
         }
 
-        // 3. Decrease source quantity
         sourceItem.quantity -= parseInt(quantity);
         sourceItem.userId = req.session.user.id;
         await sourceItem.save({ transaction: t });
 
-        // 4. Log transfer
-        const record = await StockTransfer.create({
+        normalizedItems.push({
           itemCode,
           itemName: sourceItem.name,
-          fromWarehouse,
-          toWarehouse,
-          quantity,
-          userId: req.session.user.id
-        }, { transaction: t });
-        
-        transferRecords.push(record);
+          quantity: parseInt(quantity),
+        });
     }
 
+    const totalItems = normalizedItems.length;
+    const totalQuantity = normalizedItems.reduce((sum, it) => sum + it.quantity, 0);
+    await StockTransferBatch.create(
+      {
+        items: JSON.stringify(normalizedItems),
+        fromWarehouse,
+        toWarehouse,
+        totalItems,
+        totalQuantity,
+        userId: req.session.user.id,
+      },
+      { transaction: t },
+    );
     await t.commit();
-    res.json({ message: "Transfer successful", records: transferRecords });
+    res.json({ message: "Transfer successful", count: totalItems, totalQuantity });
 
   } catch (error) {
     await t.rollback();
@@ -103,12 +106,13 @@ exports.getTransferHistory = async (req, res) => {
 
         if (search) {
             whereClause[Op.or] = [
-                { itemCode: { [Op.like]: `%${search}%` } },
-                { itemName: { [Op.like]: `%${search}%` } }
+                { items: { [Op.like]: `%${search}%` } },
+                { fromWarehouse: { [Op.like]: `%${search}%` } },
+                { toWarehouse: { [Op.like]: `%${search}%` } },
             ];
         }
 
-        const { count, rows } = await StockTransfer.findAndCountAll({
+        const { count, rows } = await StockTransferBatch.findAndCountAll({
             where: whereClause,
             include: [{ model: db.User, as: 'user', attributes: ['username'] }],
             order: [['createdAt', 'DESC']],
@@ -116,8 +120,18 @@ exports.getTransferHistory = async (req, res) => {
             offset: parseInt(offset)
         });
 
+        const items = rows.map((row) => ({
+          id: row.id,
+          fromWarehouse: row.fromWarehouse,
+          toWarehouse: row.toWarehouse,
+          totalItems: row.totalItems,
+          totalQuantity: row.totalQuantity,
+          user: row.user,
+          createdAt: row.createdAt,
+          items: JSON.parse(row.items || '[]'),
+        }));
         res.json({
-            items: rows,
+            items,
             totalPages: Math.ceil(count / limit),
             currentPage: parseInt(page),
             totalItems: count
@@ -131,14 +145,61 @@ exports.getTransferHistory = async (req, res) => {
 // Just for deleting history record (Does NOT revert stock automatically for safety reasons, unless requested)
 // Usually stock transfer deletion should be restricted. Assuming just deleting the log for now.
 exports.deleteTransfer = async (req, res) => {
+    const t = await db.sequelize.transaction();
     try {
         if (req.session.user.role !== 'super admin') {
+            await t.rollback();
             return res.status(403).json({ message: "Only Super Admin can delete transfer records" });
         }
         const { id } = req.params;
-        await StockTransfer.destroy({ where: { id } });
-        res.json({ message: "Transfer record deleted" });
+        const batch = await StockTransferBatch.findByPk(id, { transaction: t });
+        if (!batch) {
+            await t.rollback();
+            return res.status(404).json({ message: "Transfer record not found" });
+        }
+
+        const batchItems = JSON.parse(batch.items || '[]');
+        for (const it of batchItems) {
+          const destItem = await InventoryItem.findOne({
+            where: { code: it.itemCode, warehouse: batch.toWarehouse },
+            transaction: t,
+          });
+          if (!destItem || destItem.quantity < parseInt(it.quantity)) {
+            await t.rollback();
+            return res.status(400).json({ message: `Cannot revert: invalid destination state for ${it.itemCode}` });
+          }
+          destItem.quantity -= parseInt(it.quantity);
+          destItem.userId = req.session.user.id;
+          await destItem.save({ transaction: t });
+
+          let sourceItem = await InventoryItem.findOne({
+            where: { code: it.itemCode, warehouse: batch.fromWarehouse },
+            transaction: t,
+          });
+          if (sourceItem) {
+            sourceItem.quantity += parseInt(it.quantity);
+            sourceItem.userId = req.session.user.id;
+            await sourceItem.save({ transaction: t });
+          } else {
+            await InventoryItem.create(
+              {
+                name: it.itemName,
+                code: it.itemCode,
+                quantity: parseInt(it.quantity),
+                warehouse: batch.fromWarehouse,
+                userId: req.session.user.id,
+              },
+              { transaction: t },
+            );
+          }
+        }
+
+        await StockTransferBatch.destroy({ where: { id }, transaction: t });
+
+        await t.commit();
+        res.json({ message: "Transfer record deleted and stock reverted" });
     } catch (error) {
+        await t.rollback();
         res.status(500).json({ message: "Error deleting record" });
     }
 }

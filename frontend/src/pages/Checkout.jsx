@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useFieldArray } from "react-hook-form";
 import axios from "@/lib/axios";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,6 +38,7 @@ export default function Checkout() {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [detailBatch, setDetailBatch] = useState(null);
 
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -71,10 +72,10 @@ export default function Checkout() {
     (id) => axios.delete(`/checkout/${id}`),
     {
       onSuccess: fetchHistory,
-      successMessage: "Checkout record deleted",
+      successMessage: "Checkout record deleted and stock reverted",
       title: "Delete Checkout Record",
       description:
-        "Are you sure? This will delete the history record but NOT revert the stock.",
+        "Are you sure? This will revert stock back to JAAN and delete the record.",
     },
   );
 
@@ -104,10 +105,9 @@ export default function Checkout() {
             <TableHeader>
               <TableRow>
                 <TableHead>Date</TableHead>
-                <TableHead>Item Code</TableHead>
-                <TableHead>Item Name</TableHead>
                 <TableHead>Warehouse</TableHead>
-                <TableHead>Quantity</TableHead>
+                <TableHead>Items Count</TableHead>
+                <TableHead>Total Quantity</TableHead>
                 <TableHead>Reason</TableHead>
                 <TableHead>Checked Out By</TableHead>
                 {user?.role === "super admin" && (
@@ -116,29 +116,35 @@ export default function Checkout() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {history.map((log) => (
-                <TableRow key={log.id}>
+              {history.map((batch) => (
+                <TableRow key={batch.id}>
                   <TableCell>
-                    {new Date(log.createdAt).toLocaleString()}
+                    {new Date(batch.createdAt).toLocaleString()}
                   </TableCell>
-                  <TableCell className="font-medium">
-                    {log.itemCode}
-                  </TableCell>
-                  <TableCell>{log.itemName}</TableCell>
-                  <TableCell>{log.warehouse}</TableCell>
-                  <TableCell>{log.quantity}</TableCell>
-                  <TableCell>{log.reason}</TableCell>
-                  <TableCell>{log.user?.username}</TableCell>
+                  <TableCell>{batch.warehouse}</TableCell>
+                  <TableCell>{batch.totalItems}</TableCell>
+                  <TableCell>{batch.totalQuantity}</TableCell>
+                  <TableCell>{batch.reason}</TableCell>
+                  <TableCell>{batch.user?.username}</TableCell>
                   {user?.role === "super admin" && (
                     <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
-                        onClick={() => confirmDelete(log.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setDetailBatch(batch)}
+                        >
+                          Details
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
+                          onClick={() => confirmDelete(batch.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   )}
                 </TableRow>
@@ -175,6 +181,132 @@ export default function Checkout() {
           />
         )}
 
+        {detailBatch && (
+          <Dialog open={true} onOpenChange={() => setDetailBatch(null)}>
+            <DialogContent className="sm:max-w-[40vw] max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Checkout Details</DialogTitle>
+              </DialogHeader>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 mb-4">
+                <div className="flex items-center">
+                  <span className="text-sm text-muted-foreground w-40">
+                    Warehouse
+                  </span>
+                  <span className="font-medium">{detailBatch.warehouse}</span>
+                </div>
+                <div className="flex items-center">
+                  <span className="text-sm text-muted-foreground w-40">
+                    Reason
+                  </span>
+                  <span className="font-medium break-words">
+                    {detailBatch.reason || "-"}
+                  </span>
+                </div>
+                <div className="flex items-center">
+                  <span className="text-sm text-muted-foreground w-40">
+                    Checked Out By
+                  </span>
+                  <span className="font-medium">
+                    {detailBatch.user?.username || "-"}
+                  </span>
+                </div>
+                <div className="flex items-center">
+                  <span className="text-sm text-muted-foreground w-40">
+                    Date
+                  </span>
+                  <span className="font-medium">
+                    {detailBatch.createdAt
+                      ? new Date(detailBatch.createdAt).toLocaleString()
+                      : "-"}
+                  </span>
+                </div>
+                <div className="flex items-center">
+                  <span className="text-sm text-muted-foreground w-40">
+                    Items Count
+                  </span>
+                  <span className="font-medium">
+                    {detailBatch.totalItems ?? (detailBatch.items?.length || 0)}
+                  </span>
+                </div>
+                <div className="flex items-center">
+                  <span className="text-sm text-muted-foreground w-40">
+                    Total Quantity
+                  </span>
+                  <span className="font-medium">
+                    {detailBatch.totalQuantity ??
+                      (detailBatch.items?.reduce(
+                        (sum, it) => sum + (it.quantity || 0),
+                        0,
+                      ) ||
+                        0)}
+                  </span>
+                </div>
+              </div>
+              <div className="rounded-md border bg-white dark:bg-zinc-950">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Item Code</TableHead>
+                      <TableHead>Item Name</TableHead>
+                      <TableHead>Quantity</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {detailBatch.items && detailBatch.items.length > 0 ? (
+                      <>
+                        {[...(detailBatch.items || [])]
+                          .sort((a, b) =>
+                            String(a.itemCode).localeCompare(
+                              String(b.itemCode),
+                            ),
+                          )
+                          .map((it, idx) => (
+                            <TableRow key={`${it.itemCode}-${idx}`}>
+                              <TableCell className="font-medium">
+                                {it.itemCode}
+                              </TableCell>
+                              <TableCell>{it.itemName}</TableCell>
+                              <TableCell>{it.quantity}</TableCell>
+                            </TableRow>
+                          ))}
+                        <TableRow>
+                          <TableCell
+                            colSpan={2}
+                            className="text-right font-medium"
+                          >
+                            Total
+                          </TableCell>
+                          <TableCell className="font-medium">
+                            {detailBatch.totalQuantity ??
+                              detailBatch.items.reduce(
+                                (sum, it) => sum + (it.quantity || 0),
+                                0,
+                              )}
+                          </TableCell>
+                        </TableRow>
+                      </>
+                    ) : (
+                      <TableRow>
+                        <TableCell
+                          colSpan={3}
+                          className="text-center h-20 text-muted-foreground"
+                        >
+                          No items
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+              <div className="flex justify-end pt-4">
+                <Button variant="outline" onClick={() => setDetailBatch(null)}>
+                  Close
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
+
         <DeleteDialog />
       </div>
     </DashboardLayout>
@@ -184,6 +316,7 @@ export default function Checkout() {
 function CheckoutModal({ onClose, onSuccess }) {
   const {
     register,
+    control,
     handleSubmit,
     setValue,
     watch,
@@ -191,17 +324,20 @@ function CheckoutModal({ onClose, onSuccess }) {
     formState: { errors },
   } = useForm({
     defaultValues: {
-      itemCode: "",
-      quantity: 1,
+      items: [{ itemCode: "", quantity: 1 }],
       reasonSelect: "",
       reasonCustom: "",
     },
   });
 
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: "items",
+  });
+
   const [loading, setLoading] = useState(false);
   const [inventoryItems, setInventoryItems] = useState([]);
-  const [searchQuery, setSearchQuery] = useState("");
-  const debouncedItemSearch = useDebounce(searchQuery, 300);
+  const [rowSearch, setRowSearch] = useState({});
   const reasonValue = watch("reasonSelect");
 
   useEffect(() => {
@@ -210,8 +346,7 @@ function CheckoutModal({ onClose, onSuccess }) {
         const res = await axios.get("/inventory", {
           params: {
             warehouse: "JAAN",
-            search: debouncedItemSearch,
-            limit: 20,
+            limit: 1000,
           },
         });
         setInventoryItems(res.data.items);
@@ -221,14 +356,16 @@ function CheckoutModal({ onClose, onSuccess }) {
     };
 
     fetchInventory();
-  }, [debouncedItemSearch]);
+  }, []);
 
   const onSubmit = async (data) => {
     try {
       setLoading(true);
       const payload = {
-        itemCode: data.itemCode,
-        quantity: data.quantity,
+        items: data.items.map((it) => ({
+          itemCode: it.itemCode,
+          quantity: it.quantity,
+        })),
         reason:
           data.reasonSelect === "other" ? data.reasonCustom : data.reasonSelect,
       };
@@ -247,80 +384,125 @@ function CheckoutModal({ onClose, onSuccess }) {
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[50vw] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>New Checkout (From JAAN)</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 mt-4">
-          <div className="space-y-2">
-            <Label>Item (Search from JAAN inventory)</Label>
-            <Select
-              onValueChange={(val) => {
-                setValue("itemCode", val, { shouldValidate: true });
-              }}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select Item" />
-              </SelectTrigger>
-              <SelectContent>
-                <div className="p-2 sticky top-0 bg-popover z-10">
-                  <Input
-                    placeholder="Search item..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    onKeyDown={(e) => e.stopPropagation()}
-                    className="mb-2 h-8"
-                  />
-                </div>
-                <div className="max-h-[200px] overflow-y-auto">
-                  {inventoryItems.map((item) => (
-                    <SelectItem
-                      key={item.id}
-                      value={item.code}
-                      disabled={item.quantity <= 0}
-                    >
-                      {item.code} - {item.name} (Qty: {item.quantity})
-                    </SelectItem>
-                  ))}
-                  {inventoryItems.length === 0 && (
-                    <div className="p-2 text-sm text-muted-foreground text-center">
-                      No items found
-                    </div>
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <Label className="text-base font-semibold">
+                Items to Checkout (JAAN)
+              </Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => append({ itemCode: "", quantity: 1 })}
+              >
+                Add Item
+              </Button>
+            </div>
+
+            {fields.map((field, index) => (
+              <div
+                key={field.id}
+                className="grid grid-cols-12 gap-4 items-end border p-4 rounded-md"
+              >
+                <div className="col-span-7 space-y-2">
+                  <Label>Item (Search from JAAN inventory)</Label>
+                  <Select
+                    onValueChange={(val) =>
+                      setValue(`items.${index}.itemCode`, val, {
+                        shouldValidate: true,
+                      })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select Item" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <div className="p-2 sticky top-0 bg-popover z-10">
+                        <Input
+                          placeholder="Search item..."
+                          value={rowSearch[field.id] ?? ""}
+                          onChange={(e) =>
+                            setRowSearch((prev) => ({
+                              ...prev,
+                              [field.id]: e.target.value,
+                            }))
+                          }
+                          onKeyDown={(e) => e.stopPropagation()}
+                          className="mb-2 h-8"
+                        />
+                      </div>
+                      <div className="max-h-[200px] overflow-y-auto">
+                        {(() => {
+                          const q = (rowSearch[field.id] || "").toLowerCase();
+                          const filtered = inventoryItems.filter((item) => {
+                            if (!q) return true;
+                            return (
+                              item.code.toLowerCase().includes(q) ||
+                              item.name.toLowerCase().includes(q)
+                            );
+                          });
+                          return filtered.length > 0 ? (
+                            filtered.map((item) => (
+                              <SelectItem
+                                key={item.id}
+                                value={item.code}
+                                disabled={item.quantity <= 0}
+                              >
+                                {item.code} - {item.name} (Qty: {item.quantity})
+                              </SelectItem>
+                            ))
+                          ) : (
+                            <div className="p-2 text-sm text-muted-foreground text-center">
+                              No items found
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    </SelectContent>
+                  </Select>
+                  {errors.items?.[index]?.itemCode && (
+                    <p className="text-sm text-red-500">
+                      {errors.items[index].itemCode.message}
+                    </p>
                   )}
                 </div>
-              </SelectContent>
-            </Select>
-            {errors.itemCode && (
-              <p className="text-sm text-red-500">
-                {errors.itemCode.message}
-              </p>
-            )}
-          </div>
-
-          <input
-            type="hidden"
-            {...register("itemCode", {
-              required: "Item is required",
-            })}
-          />
-
-          <div className="space-y-2">
-            <Label htmlFor="quantity">Quantity</Label>
-            <Input
-              id="quantity"
-              type="number"
-              {...register("quantity", {
-                required: "Quantity is required",
-                min: 1,
-              })}
-              placeholder="Enter quantity"
-            />
-            {errors.quantity && (
-              <p className="text-sm text-red-500">
-                {errors.quantity.message}
-              </p>
-            )}
+                <div className="col-span-4 space-y-2">
+                  <Label>Quantity</Label>
+                  <Input
+                    type="number"
+                    {...register(`items.${index}.quantity`, {
+                      required: "Quantity is required",
+                      min: 1,
+                    })}
+                    placeholder="Enter quantity"
+                  />
+                  {errors.items?.[index]?.quantity && (
+                    <p className="text-sm text-red-500">
+                      {errors.items[index].quantity.message}
+                    </p>
+                  )}
+                </div>
+                <div className="col-span-1">
+                  {fields.length > 1 && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="text-red-500"
+                      onClick={() => remove(index)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
 
           <div className="space-y-2">

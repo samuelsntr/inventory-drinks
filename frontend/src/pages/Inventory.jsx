@@ -122,8 +122,8 @@ export default function Inventory() {
         >
           <TabsList>
             <TabsTrigger value="All">All Warehouses</TabsTrigger>
-            <TabsTrigger value="JAAN">JAAN Warehouse</TabsTrigger>
             <TabsTrigger value="DW">DW Warehouse</TabsTrigger>
+            <TabsTrigger value="JAAN">JAAN Warehouse</TabsTrigger>
           </TabsList>
 
           <TabsContent value={currentWarehouse} className="mt-4">
@@ -209,10 +209,21 @@ function InventoryTable({ items, loading, canEdit, onEdit, onDelete, onView }) {
               <TableCell>{item.name}</TableCell>
               <TableCell>{item.category}</TableCell>
               <TableCell>
-                <Badge variant="outline">{item.warehouse}</Badge>
+                <Badge
+                  variant="outline"
+                  className={
+                    item.warehouse === "JAAN"
+                      ? "text-yellow-600 border-yellow-600"
+                      : item.warehouse === "DW"
+                        ? "text-blue-600 border-blue-600"
+                        : ""
+                  }
+                >
+                  {item.warehouse}
+                </Badge>
               </TableCell>
               <TableCell>
-                <Badge variant={item.quantity > 0 ? "default" : "destructive"}>
+                <Badge variant={item.quantity > 5 ? "default" : "destructive"}>
                   {item.quantity}
                 </Badge>
               </TableCell>
