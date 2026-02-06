@@ -11,8 +11,6 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "@faker-js/faker": "^9.8.0",
-    "axios": "^1.7.9",
     "bcrypt": "^5.1.1",
     "connect-session-sequelize": "^7.1.7",
     "cors": "^2.8.5",
@@ -22,10 +20,8 @@
     "multer": "^2.0.2",
     "mysql2": "^3.14.1",
     "nodemon": "^3.1.9",
-    "pdfkit": "^0.17.1",
     "sequelize": "^6.37.7",
-    "sharp": "^0.34.5",
-    "socket.io": "^4.8.1"
+    "sharp": "^0.34.5"
   },
   "devDependencies": {
     "depcheck": "^1.4.7"
