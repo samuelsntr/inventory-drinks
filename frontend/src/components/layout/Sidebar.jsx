@@ -1,6 +1,5 @@
 import {
   Home,
-  Calendar,
   Users,
   LogOut,
   Package,
