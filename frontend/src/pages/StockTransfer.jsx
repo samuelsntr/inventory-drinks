@@ -31,6 +31,7 @@ import {
   Plus,
   Trash2,
   ArrowRightLeft,
+  ArrowRight,
   Search,
   Calendar as CalendarIcon,
   Eye,
@@ -194,8 +195,37 @@ export default function StockTransfer() {
                     <TableCell>
                       {new Date(batch.createdAt).toLocaleString()}
                     </TableCell>
-                    <TableCell>{batch.fromWarehouse}</TableCell>
-                    <TableCell>{batch.toWarehouse}</TableCell>
+                    <TableCell>
+                      {" "}
+                      <Badge
+                        variant="outline"
+                        className={
+                          batch.fromWarehouse === "JAAN"
+                            ? "text-yellow-600 border-yellow-600"
+                            : batch.fromWarehouse === "DW"
+                              ? "text-blue-600 border-blue-600"
+                              : ""
+                        }
+                      >
+                        {batch.fromWarehouse}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="flex items-center">
+                      {" "}
+                      <ArrowRight className="mr-2 h-4 w-4" />
+                      <Badge
+                        variant="outline"
+                        className={
+                          batch.toWarehouse === "JAAN"
+                            ? "text-yellow-600 border-yellow-600"
+                            : batch.toWarehouse === "DW"
+                              ? "text-blue-600 border-blue-600"
+                              : ""
+                        }
+                      >
+                        {batch.toWarehouse}
+                      </Badge>
+                    </TableCell>
                     <TableCell>{batch.totalItems}</TableCell>
                     <TableCell>{batch.totalQuantity}</TableCell>
                     <TableCell>{batch.user?.username}</TableCell>
