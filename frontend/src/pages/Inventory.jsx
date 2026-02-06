@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import axios from "@/lib/axios";
+import api from "@/lib/axios";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -55,7 +55,7 @@ export default function Inventory() {
   const fetchItems = async () => {
     try {
       setLoading(true);
-      const res = await axios.get(`/inventory`, {
+      const res = await api.get(`/inventory`, {
         params: {
           warehouse: currentWarehouse,
           search: debouncedSearch,
@@ -104,7 +104,7 @@ export default function Inventory() {
   };
 
   const { DeleteDialog, confirmDelete } = useDeleteDialog(
-    (id) => axios.delete(`/inventory/${id}`),
+    (id) => api.delete(`/inventory/${id}`),
     {
       onSuccess: fetchItems,
       successMessage: "Item deleted",

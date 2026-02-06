@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
-import axios from "@/lib/axios";
+import api from "@/lib/axios";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -67,7 +67,7 @@ export default function Checkout() {
   const fetchHistory = async () => {
     try {
       setLoading(true);
-      const res = await axios.get("/checkout/history", {
+      const res = await api.get("/checkout/history", {
         params: {
           search: debouncedSearch,
           page: page,
@@ -86,7 +86,7 @@ export default function Checkout() {
   };
 
   const { DeleteDialog, confirmDelete } = useDeleteDialog(
-    (id) => axios.delete(`/checkout/${id}`),
+    (id) => api.delete(`/checkout/${id}`),
     {
       onSuccess: fetchHistory,
       successMessage: "Checkout record deleted and stock reverted",
@@ -396,7 +396,7 @@ function CheckoutModal({ onClose, onSuccess }) {
   useEffect(() => {
     const fetchInventory = async () => {
       try {
-        const res = await axios.get("/inventory", {
+        const res = await api.get("/inventory", {
           params: {
             warehouse: "JAAN",
             limit: 1000,
@@ -423,7 +423,7 @@ function CheckoutModal({ onClose, onSuccess }) {
           data.reasonSelect === "other" ? data.reasonCustom : data.reasonSelect,
       };
 
-      await axios.post("/checkout", payload);
+      await api.post("/checkout", payload);
       toast.success("Checkout successful");
       reset();
       onSuccess();

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import DashboardLayout from "@/components/layout/DashboardLayout";
-import axios from "@/lib/axios";
+import api from "@/lib/axios";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -69,7 +69,7 @@ export default function StockTransfer() {
   const fetchTransfers = async () => {
     try {
       setLoading(true);
-      const res = await axios.get("/transfer/history", {
+      const res = await api.get("/transfer/history", {
         params: {
           search: debouncedSearch,
           page: page,
@@ -88,7 +88,7 @@ export default function StockTransfer() {
   };
 
   const { DeleteDialog, confirmDelete } = useDeleteDialog(
-    (id) => axios.delete(`/transfer/${id}`),
+    (id) => api.delete(`/transfer/${id}`),
     {
       onSuccess: fetchTransfers,
       successMessage: "Transfer record deleted and stock reverted",
@@ -400,7 +400,7 @@ function TransferModal({ onClose, onSuccess }) {
     if (fromWarehouse) {
       const fetchInventory = async () => {
         try {
-          const res = await axios.get("/inventory", {
+          const res = await api.get("/inventory", {
             params: {
               warehouse: fromWarehouse,
               limit: 1000, // Limit results for dropdown
@@ -422,7 +422,7 @@ function TransferModal({ onClose, onSuccess }) {
   const onSubmit = async (data) => {
     try {
       setLoading(true);
-      await axios.post("/transfer", data);
+      await api.post("/transfer", data);
       toast.success("Stock transfer successful");
       onSuccess();
     } catch (error) {
