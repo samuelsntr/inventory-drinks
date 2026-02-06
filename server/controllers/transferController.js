@@ -2,6 +2,7 @@ const db = require("../models");
 const InventoryItem = db.InventoryItem;
 const StockTransferBatch = db.StockTransferBatch;
 const { Op } = require("sequelize");
+const { logAudit } = require("../utils/audit");
 
 exports.transferStock = async (req, res) => {
   const t = await db.sequelize.transaction();
@@ -89,6 +90,12 @@ exports.transferStock = async (req, res) => {
       { transaction: t },
     );
     await t.commit();
+    await logAudit(req, {
+      action: 'transfer.create',
+      entityType: 'transfer',
+      description: `Transfer from ${fromWarehouse} to ${toWarehouse}`,
+      metadata: { totalItems, totalQuantity, items: normalizedItems },
+    });
     res.json({ message: "Transfer successful", count: totalItems, totalQuantity });
 
   } catch (error) {
@@ -209,8 +216,14 @@ exports.deleteTransfer = async (req, res) => {
 
         await StockTransferBatch.destroy({ where: { id }, transaction: t });
 
-        await t.commit();
-        res.json({ message: "Transfer record deleted and stock reverted" });
+    await logAudit(req, {
+      action: 'transfer.delete',
+      entityType: 'transfer',
+      entityId: id,
+      description: `Deleted transfer batch and reverted stock`,
+      metadata: { id, from: batch.fromWarehouse, to: batch.toWarehouse, items: batchItems },
+    });
+    res.json({ message: "Transfer record deleted and stock reverted" });
     } catch (error) {
         await t.rollback();
         res.status(500).json({ message: "Error deleting record" });

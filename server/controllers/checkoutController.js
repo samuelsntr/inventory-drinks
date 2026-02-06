@@ -2,6 +2,7 @@ const db = require("../models");
 const InventoryItem = db.InventoryItem;
 const CheckoutBatch = db.CheckoutBatch;
 const { Op } = require("sequelize");
+const { logAudit } = require("../utils/audit");
 
 exports.checkoutItem = async (req, res) => {
   const t = await db.sequelize.transaction();
@@ -77,6 +78,12 @@ exports.checkoutItem = async (req, res) => {
       { transaction: t },
     );
     await t.commit();
+    await logAudit(req, {
+      action: 'checkout.create',
+      entityType: 'checkout',
+      description: `Checkout from ${warehouse} (${reason || '-'})`,
+      metadata: { totalItems, totalQuantity, items: normalizedItems },
+    });
     res.json({
       message: "Checkout successful",
       count: items.length,
@@ -180,6 +187,13 @@ exports.deleteCheckout = async (req, res) => {
     }
     await CheckoutBatch.destroy({ where: { id }, transaction: t });
     await t.commit();
+    await logAudit(req, {
+      action: 'checkout.delete',
+      entityType: 'checkout',
+      entityId: id,
+      description: `Deleted checkout batch and reverted stock`,
+      metadata: { id, warehouse: batch.warehouse, items: batchItems },
+    });
     res.json({ message: "Checkout record deleted and stock reverted" });
   } catch (error) {
     await t.rollback();

@@ -8,6 +8,7 @@ const inventoryRoutes = require("./routes/inventory");
 const transferRoutes = require("./routes/transfer");
 const checkoutRoutes = require("./routes/checkout");
 const dashboardRoutes = require("./routes/dashboard");
+const logsRoutes = require("./routes/logs");
 const db = require("./models");
 const app = express();
 const path = require("path");
@@ -54,6 +55,7 @@ app.use("/api/inventory", inventoryRoutes);
 app.use("/api/transfer", transferRoutes);
 app.use("/api/checkout", checkoutRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/logs", logsRoutes);
 
 // Test route
 app.get("/", (req, res) => res.send("Inventory Drinks API running"));

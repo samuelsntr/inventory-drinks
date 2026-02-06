@@ -1,5 +1,6 @@
 const { User } = require('../models');
 const bcrypt = require('bcrypt');
+const { logAudit } = require('../utils/audit');
 
 // Ambil semua user (tanpa password) dalam urutan tanggal
 exports.getUsers = async (req, res) => {
@@ -29,6 +30,12 @@ exports.createUser = async (req, res) => {
       role
     });
 
+    await logAudit(req, {
+      action: 'user.create',
+      entityType: 'user',
+      entityId: newUser.id,
+      description: `Created user ${newUser.username} (${newUser.role})`,
+    });
     res.status(201).json({ message: 'User berhasil dibuat', user: { id: newUser.id, username: newUser.username, role: newUser.role } });
   } catch (err) {
     res.status(500).json({ message: 'Gagal membuat user', error: err.message });
@@ -53,6 +60,13 @@ exports.updateUser = async (req, res) => {
 
     await user.save();
 
+    await logAudit(req, {
+      action: 'user.update',
+      entityType: 'user',
+      entityId: user.id,
+      description: `Updated user ${user.username}`,
+      metadata: { username, role, passwordChanged: !!password },
+    });
     res.json({ message: 'User berhasil diupdate' });
   } catch (err) {
     res.status(500).json({ message: 'Gagal update user', error: err.message });
@@ -66,6 +80,12 @@ exports.deleteUser = async (req, res) => {
     if (!user) return res.status(404).json({ message: 'User tidak ditemukan' });
 
     await user.destroy();
+    await logAudit(req, {
+      action: 'user.delete',
+      entityType: 'user',
+      entityId: user.id,
+      description: `Deleted user ${user.username}`,
+    });
     res.json({ message: 'User berhasil dihapus' });
   } catch (err) {
     res.status(500).json({ message: 'Gagal menghapus user', error: err.message });

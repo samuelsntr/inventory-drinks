@@ -1,5 +1,6 @@
 const { User } = require('../models');
 const bcrypt = require('bcrypt');
+const { logAudit } = require('../utils/audit');
 
 exports.login = async (req, res) => {
   const { username, password } = req.body;
@@ -18,6 +19,12 @@ exports.login = async (req, res) => {
       role: user.role
     };
 
+    await logAudit(req, {
+      action: 'login',
+      entityType: 'auth',
+      entityId: user.id,
+      description: `User ${user.username} logged in`,
+    });
     res.json({ message: 'Login berhasil', user: req.session.user });
   } catch (err) {
     res.status(500).json({ message: 'Terjadi kesalahan server', error: err.message });
@@ -47,6 +54,12 @@ exports.register = async (req, res) => {
       role
     });
 
+    await logAudit(req, {
+      action: 'register',
+      entityType: 'user',
+      entityId: newUser.id,
+      description: `Registered user ${newUser.username} with role ${newUser.role}`,
+    });
     res.status(201).json({ message: 'Register berhasil', user: newUser });
   } catch (err) {
     res.status(500).json({ message: 'Terjadi kesalahan server', error: err.message });
@@ -74,6 +87,11 @@ exports.logout = (req, res) => {
 
     // Hapus cookie di browser juga
     res.clearCookie("connect.sid"); // nama cookie default dari express-session
+    logAudit(req, {
+      action: 'logout',
+      entityType: 'auth',
+      description: `User logged out`,
+    });
     res.json({ message: "Logout berhasil" });
   });
 };

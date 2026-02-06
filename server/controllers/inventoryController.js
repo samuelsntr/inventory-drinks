@@ -58,6 +58,8 @@ exports.getItem = async (req, res) => {
   }
 };
 
+const { logAudit } = require("../utils/audit");
+
 exports.createItem = async (req, res) => {
   try {
     // Check permissions (Admin and Super Admin only)
@@ -86,6 +88,13 @@ exports.createItem = async (req, res) => {
       userId: req.session.user.id
     });
 
+    await logAudit(req, {
+      action: 'inventory.create',
+      entityType: 'inventory',
+      entityId: newItem.id,
+      description: `Created item ${code} in ${warehouse}`,
+      metadata: { name, code, quantity, price, warehouse },
+    });
     res.status(201).json(newItem);
   } catch (error) {
     console.error(error);
@@ -118,6 +127,13 @@ exports.updateItem = async (req, res) => {
     item.userId = req.session.user.id; // Update last updated by
 
     await item.save();
+    await logAudit(req, {
+      action: 'inventory.update',
+      entityType: 'inventory',
+      entityId: item.id,
+      description: `Updated item ${item.code}`,
+      metadata: { id, changes: { name, code, quantity, price, warehouse } },
+    });
     res.json(item);
   } catch (error) {
     console.error(error);
@@ -137,6 +153,13 @@ exports.deleteItem = async (req, res) => {
     if (!item) return res.status(404).json({ message: "Item not found" });
 
     await item.destroy();
+    await logAudit(req, {
+      action: 'inventory.delete',
+      entityType: 'inventory',
+      entityId: id,
+      description: `Deleted item ${item.code}`,
+      metadata: { id, code: item.code, warehouse: item.warehouse },
+    });
     res.json({ message: "Item deleted successfully" });
   } catch (error) {
     res.status(500).json({ message: "Error deleting item" });
