@@ -29,6 +29,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/formatDate";
 import { FileText, Calendar as CalendarIcon, Eye } from "lucide-react";
+import { useDebounce } from "@/hooks/useDebounce";
 
 export default function LogsPage() {
   const { user } = useAuth();
@@ -42,14 +43,18 @@ export default function LogsPage() {
   const [dateRange, setDateRange] = useState({ from: null, to: null });
   const [selectedLog, setSelectedLog] = useState(null);
 
+  const debouncedUser = useDebounce(userFilter, 500);
+  const debouncedAction = useDebounce(actionFilter, 500);
+  const debouncedEntity = useDebounce(entityFilter, 500);
+
   useEffect(() => {
     fetchLogs();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     page,
-    userFilter,
-    actionFilter,
-    entityFilter,
+    debouncedUser,
+    debouncedAction,
+    debouncedEntity,
     dateRange?.from,
     dateRange?.to,
   ]);
@@ -61,9 +66,9 @@ export default function LogsPage() {
         params: {
           page,
           limit: 10,
-          user: userFilter || undefined,
-          action: actionFilter || undefined,
-          entityType: entityFilter || undefined,
+          user: debouncedUser || undefined,
+          action: debouncedAction || undefined,
+          entityType: debouncedEntity || undefined,
           startDate: dateRange?.from ? dateRange.from.toISOString() : undefined,
           endDate: dateRange?.to ? dateRange.to.toISOString() : undefined,
         },
