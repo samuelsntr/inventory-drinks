@@ -152,7 +152,34 @@ export default function InventoryForm({ item, warehouse, onClose, onSuccess }) {
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1">
               <Label>Category</Label>
-              <Input {...register("category")} />
+              <Select
+                onValueChange={(val) => setValue("category", val)}
+                defaultValue={item?.category}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select Category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {[
+                    "Whiskey",
+                    "Liqueur",
+                    "Tequila",
+                    "Gin",
+                    "Vodka",
+                    "Cognac",
+                    "Rum",
+                    "Housepouring",
+                    "Beer",
+                    "Red Wine",
+                    "White Wine",
+                    "Champagne",
+                  ].map((cat) => (
+                    <SelectItem key={cat} value={cat}>
+                      {cat}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-1">
               <Label>Condition</Label>
