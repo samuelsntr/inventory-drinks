@@ -5,7 +5,7 @@ const { Op } = require("sequelize");
 
 exports.getAllItems = async (req, res) => {
   try {
-    const { warehouse, search, page = 1, limit = 10 } = req.query;
+    const { warehouse, search, page = 1, limit = 10, sortBy = 'createdAt', sortOrder = 'DESC' } = req.query;
     const offset = (page - 1) * limit;
     
     const whereClause = {};
@@ -21,12 +21,17 @@ exports.getAllItems = async (req, res) => {
       ];
     }
 
+    // Validate sort parameters
+    const validSortOrder = ['ASC', 'DESC'].includes(sortOrder.toUpperCase()) ? sortOrder.toUpperCase() : 'DESC';
+    const validSortFields = ['quantity', 'createdAt', 'name', 'code', 'price'];
+    const validSortBy = validSortFields.includes(sortBy) ? sortBy : 'createdAt';
+
     const { count, rows } = await InventoryItem.findAndCountAll({
       where: whereClause,
       include: [
         { model: User, as: 'lastUpdatedBy', attributes: ['username'] }
       ],
-      order: [['createdAt', 'DESC']],
+      order: [[validSortBy, validSortOrder]],
       limit: parseInt(limit),
       offset: parseInt(offset)
     });

@@ -4,7 +4,15 @@ import axios from "@/lib/axios";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Pencil, Trash2, Eye } from "lucide-react";
+import {
+  Plus,
+  Pencil,
+  Trash2,
+  Eye,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+} from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import {
   Table,
@@ -36,9 +44,13 @@ export default function Inventory() {
   const [totalPages, setTotalPages] = useState(1);
   const debouncedSearch = useDebounce(search, 500);
 
+  // Sorting
+  const [sortBy, setSortBy] = useState("createdAt");
+  const [sortOrder, setSortOrder] = useState("DESC");
+
   useEffect(() => {
     fetchItems();
-  }, [currentWarehouse, debouncedSearch, page]);
+  }, [currentWarehouse, debouncedSearch, page, sortBy, sortOrder]);
 
   const fetchItems = async () => {
     try {
@@ -49,6 +61,8 @@ export default function Inventory() {
           search: debouncedSearch,
           page: page,
           limit: 10,
+          sortBy,
+          sortOrder,
         },
       });
       setItems(res.data.items);
@@ -57,6 +71,15 @@ export default function Inventory() {
       console.error("Failed to fetch inventory", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSort = (field) => {
+    if (sortBy === field) {
+      setSortOrder(sortOrder === "ASC" ? "DESC" : "ASC");
+    } else {
+      setSortBy(field);
+      setSortOrder("DESC");
     }
   };
 
@@ -135,6 +158,9 @@ export default function Inventory() {
                 onEdit={handleEdit}
                 onDelete={confirmDelete}
                 onView={handleView}
+                sortBy={sortBy}
+                sortOrder={sortOrder}
+                onSort={handleSort}
               />
 
               {totalPages > 1 && (
@@ -170,8 +196,28 @@ export default function Inventory() {
   );
 }
 
-function InventoryTable({ items, loading, canEdit, onEdit, onDelete, onView }) {
+function InventoryTable({
+  items,
+  loading,
+  canEdit,
+  onEdit,
+  onDelete,
+  onView,
+  sortBy,
+  sortOrder,
+  onSort,
+}) {
   if (loading) return <div>Loading...</div>;
+
+  const SortIcon = ({ field }) => {
+    if (sortBy !== field)
+      return <ArrowUpDown className="ml-2 h-4 w-4 opacity-50" />;
+    return sortOrder === "ASC" ? (
+      <ArrowUp className="ml-2 h-4 w-4" />
+    ) : (
+      <ArrowDown className="ml-2 h-4 w-4" />
+    );
+  };
 
   return (
     <div className="rounded-md border shadow-sm">
@@ -183,7 +229,15 @@ function InventoryTable({ items, loading, canEdit, onEdit, onDelete, onView }) {
             <TableHead>Name</TableHead>
             <TableHead>Category</TableHead>
             <TableHead>Warehouse</TableHead>
-            <TableHead>Quantity</TableHead>
+            <TableHead
+              className="cursor-pointer hover:bg-muted/50 transition-colors"
+              onClick={() => onSort("quantity")}
+            >
+              <div className="flex items-center">
+                Quantity
+                <SortIcon field="quantity" />
+              </div>
+            </TableHead>
             <TableHead>Price</TableHead>
             <TableHead>Condition</TableHead>
             <TableHead className="text-right">Actions</TableHead>
@@ -243,10 +297,10 @@ function InventoryTable({ items, loading, canEdit, onEdit, onDelete, onView }) {
                 </Badge>
               </TableCell>
               <TableCell className="text-right">
-                <div className="flex justify-end gap-1">
+                <div className="flex justify-end gap-2">
                   <Button
-                    variant="ghost"
-                    size="icon"
+                    variant="outline"
+                    size="sm"
                     title="View Details"
                     onClick={() => onView(item)}
                   >
@@ -255,17 +309,16 @@ function InventoryTable({ items, loading, canEdit, onEdit, onDelete, onView }) {
                   {canEdit && (
                     <>
                       <Button
-                        variant="ghost"
-                        size="icon"
+                        variant="outline"
+                        size="sm"
                         title="Edit"
                         onClick={() => onEdit(item)}
                       >
                         <Pencil className="h-4 w-4" />
                       </Button>
                       <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                        variant="destructive"
+                        size="sm"
                         title="Delete"
                         onClick={() => onDelete(item.id)}
                       >
