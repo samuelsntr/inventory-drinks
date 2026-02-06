@@ -53,18 +53,19 @@ export function AppSidebar() {
     },
   ];
 
-  if (user?.role === "super admin") {
-    navigation.push({
-      title: "User Management",
-      icon: Users,
-      url: "/users",
-    });
-  }
+  const adminNavigation = [];
   if (user?.role === "admin" || user?.role === "super admin") {
-    navigation.push({
+    adminNavigation.push({
       title: "Audit Logs",
       icon: FileText,
       url: "/logs",
+    });
+  }
+  if (user?.role === "super admin") {
+    adminNavigation.unshift({
+      title: "User Management",
+      icon: Users,
+      url: "/users",
     });
   }
 
@@ -103,6 +104,28 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+        {adminNavigation.length > 0 && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Admin</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {adminNavigation.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={location.pathname === item.url}
+                    >
+                      <NavLink to={item.url}>
+                        <item.icon className="h-5 w-5" />
+                        <span>{item.title}</span>
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
 
       {/* Logout Button */}
