@@ -49,7 +49,7 @@ export default function Login() {
     <div className="min-h-screen flex items-center justify-center bg-cover bg-center p-4 dark:bg-gray-900">
       <div className="w-full max-w-md bg-white/90 dark:bg-gray-800/90 backdrop-blur-md rounded-xl shadow-lg p-8">
         <h1 className="text-3xl font-bold text-center mb-6 dark:text-white">
-          Jaan Reservation
+          Inventory Drinks
         </h1>
 
         {errorMessage && (
