@@ -33,6 +33,7 @@ import {
   ArrowRightLeft,
   Search,
   Calendar as CalendarIcon,
+  Eye,
 } from "lucide-react";
 import {
   Popover,
@@ -187,12 +188,11 @@ export default function StockTransfer() {
                           size="sm"
                           onClick={() => setDetailBatch(batch)}
                         >
-                          Details
+                          <Eye className="h-4 w-4" />
                         </Button>
                         <Button
-                          variant="ghost"
-                          size="icon"
-                          className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
+                          variant="destructive"
+                          size="sm"
                           onClick={() => confirmDelete(batch.id)}
                         >
                           <Trash2 className="h-4 w-4" />
@@ -598,9 +598,8 @@ function TransferModal({ onClose, onSuccess }) {
                   {fields.length > 1 && (
                     <Button
                       type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="text-red-500"
+                      variant="destructive"
+                      size="sm"
                       onClick={() => remove(index)}
                     >
                       <Trash2 className="h-4 w-4" />
@@ -628,12 +627,7 @@ function TransferModal({ onClose, onSuccess }) {
               </span>
             </div>
             <div className="flex justify-end gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                className="md:mr-2"
-                onClick={onClose}
-              >
+              <Button type="button" variant="outline" onClick={onClose}>
                 Cancel
               </Button>
               <Button

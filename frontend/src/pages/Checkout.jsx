@@ -31,7 +31,13 @@ import { useDebounce } from "@/hooks/useDebounce";
 import PaginationControls from "@/components/PaginationControls";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDeleteDialog } from "@/hooks/useDeleteDialog";
-import { ArrowRightLeft, Trash2, Calendar as CalendarIcon } from "lucide-react";
+import {
+  ArrowRightLeft,
+  Trash2,
+  Calendar as CalendarIcon,
+  Eye,
+  Plus,
+} from "lucide-react";
 import {
   Popover,
   PopoverTrigger,
@@ -178,12 +184,11 @@ export default function Checkout() {
                           size="sm"
                           onClick={() => setDetailBatch(batch)}
                         >
-                          Details
+                          <Eye className="h-4 w-4" />
                         </Button>
                         <Button
-                          variant="ghost"
-                          size="icon"
-                          className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
+                          variant="destructive"
+                          size="sm"
                           onClick={() => confirmDelete(batch.id)}
                         >
                           <Trash2 className="h-4 w-4" />
@@ -505,7 +510,7 @@ function CheckoutModal({ onClose, onSuccess }) {
                 size="sm"
                 onClick={() => append({ itemCode: "", quantity: 1 })}
               >
-                Add Item
+                <Plus className="mr-2 h-4 w-4" /> Add Item
               </Button>
             </div>
 
@@ -599,9 +604,8 @@ function CheckoutModal({ onClose, onSuccess }) {
                   {fields.length > 1 && (
                     <Button
                       type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="text-red-500"
+                      variant="destructive"
+                      size="sm"
                       onClick={() => remove(index)}
                     >
                       <Trash2 className="h-4 w-4" />
