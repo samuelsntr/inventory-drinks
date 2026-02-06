@@ -63,6 +63,17 @@ export function AppSidebar() {
   return (
     <Sidebar className="h-screen flex flex-col">
       <SidebarContent className="flex-grow">
+        <SidebarGroup>
+          <SidebarGroupLabel>User</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <div className="px-3 py-2 rounded-md border bg-muted/40">
+              <div className="text-sm font-medium">{user?.username || "-"}</div>
+              <div className="text-xs text-muted-foreground">
+                {user?.role || "-"}
+              </div>
+            </div>
+          </SidebarGroupContent>
+        </SidebarGroup>
         {/* Application Navigation */}
         <SidebarGroup>
           <SidebarGroupLabel>Menu</SidebarGroupLabel>

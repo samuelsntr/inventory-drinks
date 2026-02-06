@@ -232,6 +232,7 @@ export default function Checkout() {
 
         {showModal && (
           <CheckoutModal
+            user={user}
             onClose={() => setShowModal(false)}
             onSuccess={() => {
               fetchHistory();
@@ -379,7 +380,7 @@ export default function Checkout() {
   );
 }
 
-function CheckoutModal({ onClose, onSuccess }) {
+function CheckoutModal({ user, onClose, onSuccess }) {
   const {
     register,
     control,
@@ -470,6 +471,9 @@ function CheckoutModal({ onClose, onSuccess }) {
                 </div>
               </div>
               <div className="hidden md:flex flex-col items-end text-xs text-muted-foreground">
+                <span className="font-medium">
+                  {user?.username} ({user?.role})
+                </span>
                 <span>
                   Items:{" "}
                   <span className="font-semibold text-foreground">

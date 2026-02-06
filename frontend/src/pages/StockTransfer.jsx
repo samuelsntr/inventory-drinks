@@ -266,6 +266,7 @@ export default function StockTransfer() {
 
         {showModal && (
           <TransferModal
+            user={user}
             onClose={() => setShowModal(false)}
             onSuccess={() => {
               fetchTransfers();
@@ -411,7 +412,7 @@ export default function StockTransfer() {
   );
 }
 
-function TransferModal({ onClose, onSuccess }) {
+function TransferModal({ user, onClose, onSuccess }) {
   const {
     register,
     control,
@@ -502,6 +503,9 @@ function TransferModal({ onClose, onSuccess }) {
                 </div>
               </div>
               <div className="hidden md:flex flex-col items-end text-xs text-muted-foreground">
+                <span className="font-medium">
+                  {user?.username} ({user?.role})
+                </span>
                 <span>
                   Items:{" "}
                   <span className="font-semibold text-foreground">
