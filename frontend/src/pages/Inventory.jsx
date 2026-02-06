@@ -28,6 +28,7 @@ import ItemDetailDialog from "@/components/ItemDetailDialog";
 import PaginationControls from "@/components/PaginationControls";
 import { useDeleteDialog } from "@/hooks/useDeleteDialog";
 import { useDebounce } from "@/hooks/useDebounce";
+import { Spinner } from "@/components/ui/spinner";
 
 export default function Inventory() {
   const { user } = useAuth();
@@ -207,7 +208,13 @@ function InventoryTable({
   sortOrder,
   onSort,
 }) {
-  if (loading) return <div>Loading...</div>;
+  if (loading) {
+    return (
+      <div className="rounded-md border shadow-sm p-8 flex justify-center items-center h-64">
+        <Spinner size={32} />
+      </div>
+    );
+  }
 
   const SortIcon = ({ field }) => {
     if (sortBy !== field)

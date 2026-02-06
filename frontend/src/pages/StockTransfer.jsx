@@ -47,6 +47,7 @@ import PaginationControls from "@/components/PaginationControls";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDeleteDialog } from "@/hooks/useDeleteDialog";
+import { Spinner } from "@/components/ui/spinner";
 
 export default function StockTransfer() {
   const { user } = useAuth();
@@ -170,47 +171,54 @@ export default function StockTransfer() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {transfers.map((batch) => (
-                <TableRow key={batch.id}>
-                  <TableCell>
-                    {new Date(batch.createdAt).toLocaleString()}
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="h-24 text-center">
+                    <Spinner />
                   </TableCell>
-                  <TableCell>{batch.fromWarehouse}</TableCell>
-                  <TableCell>{batch.toWarehouse}</TableCell>
-                  <TableCell>{batch.totalItems}</TableCell>
-                  <TableCell>{batch.totalQuantity}</TableCell>
-                  <TableCell>{batch.user?.username}</TableCell>
-                  {user?.role === "super admin" && (
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setDetailBatch(batch)}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => confirmDelete(batch.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  )}
                 </TableRow>
-              ))}
-              {transfers.length === 0 && (
+              ) : transfers.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={8}
-                    className="text-center h-24 text-muted-foreground"
+                    colSpan={7}
+                    className="h-24 text-center text-muted-foreground"
                   >
                     No transfer history found.
                   </TableCell>
                 </TableRow>
+              ) : (
+                transfers.map((batch) => (
+                  <TableRow key={batch.id}>
+                    <TableCell>
+                      {new Date(batch.createdAt).toLocaleString()}
+                    </TableCell>
+                    <TableCell>{batch.fromWarehouse}</TableCell>
+                    <TableCell>{batch.toWarehouse}</TableCell>
+                    <TableCell>{batch.totalItems}</TableCell>
+                    <TableCell>{batch.totalQuantity}</TableCell>
+                    <TableCell>{batch.user?.username}</TableCell>
+                    {user?.role === "super admin" && (
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setDetailBatch(batch)}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => confirmDelete(batch.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    )}
+                  </TableRow>
+                ))
               )}
             </TableBody>
           </Table>

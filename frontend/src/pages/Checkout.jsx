@@ -46,6 +46,7 @@ import {
 import { Calendar } from "@/components/ui/calendar";
 import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/formatDate";
+import { Spinner } from "@/components/ui/spinner";
 
 export default function Checkout() {
   const { user } = useAuth();
@@ -166,47 +167,54 @@ export default function Checkout() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {history.map((batch) => (
-                <TableRow key={batch.id}>
-                  <TableCell>
-                    {new Date(batch.createdAt).toLocaleString()}
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="h-24 text-center">
+                    <Spinner />
                   </TableCell>
-                  <TableCell>{batch.warehouse}</TableCell>
-                  <TableCell>{batch.totalItems}</TableCell>
-                  <TableCell>{batch.totalQuantity}</TableCell>
-                  <TableCell>{batch.reason}</TableCell>
-                  <TableCell>{batch.user?.username}</TableCell>
-                  {user?.role === "super admin" && (
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setDetailBatch(batch)}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => confirmDelete(batch.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  )}
                 </TableRow>
-              ))}
-              {history.length === 0 && (
+              ) : history.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={8}
-                    className="text-center h-24 text-muted-foreground"
+                    colSpan={7}
+                    className="h-24 text-center text-muted-foreground"
                   >
                     No checkout history found.
                   </TableCell>
                 </TableRow>
+              ) : (
+                history.map((batch) => (
+                  <TableRow key={batch.id}>
+                    <TableCell>
+                      {new Date(batch.createdAt).toLocaleString()}
+                    </TableCell>
+                    <TableCell>{batch.warehouse}</TableCell>
+                    <TableCell>{batch.totalItems}</TableCell>
+                    <TableCell>{batch.totalQuantity}</TableCell>
+                    <TableCell>{batch.reason}</TableCell>
+                    <TableCell>{batch.user?.username}</TableCell>
+                    {user?.role === "super admin" && (
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setDetailBatch(batch)}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => confirmDelete(batch.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    )}
+                  </TableRow>
+                ))
               )}
             </TableBody>
           </Table>
