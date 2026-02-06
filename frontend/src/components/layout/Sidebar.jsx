@@ -5,6 +5,7 @@ import {
   Package,
   ArrowRightLeft,
   ShoppingCart,
+  FileText,
 } from "lucide-react";
 import {
   Sidebar,
@@ -57,6 +58,13 @@ export function AppSidebar() {
       title: "User Management",
       icon: Users,
       url: "/users",
+    });
+  }
+  if (user?.role === "admin" || user?.role === "super admin") {
+    navigation.push({
+      title: "Audit Logs",
+      icon: FileText,
+      url: "/logs",
     });
   }
 

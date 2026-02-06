@@ -11,6 +11,7 @@ import UsersPage from "./pages/Users";
 import Inventory from "./pages/Inventory";
 import StockTransfer from "./pages/StockTransfer";
 import Checkout from "./pages/Checkout";
+import LogsPage from "./pages/Logs";
 import ProtectedRoute from "@/components/ProtectedRoute";
 
 function App() {
@@ -22,13 +23,7 @@ function App() {
         {/* Public */}
         <Route
           path="/"
-          element={
-            user ? (
-              <Navigate to="/dashboard" />
-            ) : (
-              <Login />
-            )
-          }
+          element={user ? <Navigate to="/dashboard" /> : <Login />}
         />
 
         {/* Protected routes */}
@@ -72,7 +67,15 @@ function App() {
             </ProtectedRoute>
           }
         />
-        
+        <Route
+          path="/logs"
+          element={
+            <ProtectedRoute>
+              <LogsPage />
+            </ProtectedRoute>
+          }
+        />
+
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Router>
