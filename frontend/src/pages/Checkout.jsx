@@ -47,6 +47,8 @@ import { Calendar } from "@/components/ui/calendar";
 import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/formatDate";
 import { Spinner } from "@/components/ui/spinner";
+import { exportCheckoutPDF } from "@/lib/pdfExport";
+import { Printer } from "lucide-react";
 
 export default function Checkout() {
   const { user } = useAuth();
@@ -355,7 +357,14 @@ export default function Checkout() {
                   </TableBody>
                 </Table>
               </div>
-              <div className="flex justify-end pt-4">
+              <div className="flex justify-end pt-4 gap-2">
+                <Button
+                  onClick={() => exportCheckoutPDF(detailBatch)}
+                  className="gap-2"
+                >
+                  <Printer className="h-4 w-4" />
+                  Print PDF
+                </Button>
                 <Button variant="outline" onClick={() => setDetailBatch(null)}>
                   Close
                 </Button>

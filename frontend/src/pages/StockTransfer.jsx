@@ -48,6 +48,8 @@ import { useDebounce } from "@/hooks/useDebounce";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDeleteDialog } from "@/hooks/useDeleteDialog";
 import { Spinner } from "@/components/ui/spinner";
+import { exportTransferPDF } from "@/lib/pdfExport";
+import { Printer } from "lucide-react";
 
 export default function StockTransfer() {
   const { user } = useAuth();
@@ -357,7 +359,14 @@ export default function StockTransfer() {
                   </TableBody>
                 </Table>
               </div>
-              <div className="flex justify-end pt-4">
+              <div className="flex justify-end pt-4 gap-2">
+                <Button
+                  onClick={() => exportTransferPDF(detailBatch)}
+                  className="gap-2"
+                >
+                  <Printer className="h-4 w-4" />
+                  Print PDF
+                </Button>
                 <Button variant="outline" onClick={() => setDetailBatch(null)}>
                   Close
                 </Button>
