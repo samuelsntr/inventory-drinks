@@ -1,7 +1,8 @@
 ---
 deployment:
   tasks:
-    - export DEPLOYPATH=/home/u1376460/repositories/inventory-drinks-api
-    - /bin/rsync -av --delete server/ $DEPLOYPATH
+    - export DEPLOYPATH=/home/u1376460/api-inventory-drinks
+    - /bin/mkdir -p $DEPLOYPATH/tmp
+    - /bin/rsync -av --delete server/ $DEPLOYPATH/
     - cd $DEPLOYPATH && npm install --production
-    - touch $DEPLOYPATH/tmp/restart.txt
+    - /bin/touch $DEPLOYPATH/tmp/restart.txt
