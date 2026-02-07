@@ -38,7 +38,7 @@ export const exportCheckoutPDF = (batch) => {
     { label: "Warehouse", value: batch.warehouse || "-" },
     { label: "Reason", value: batch.reason || "-" },
     { label: "Checked Out By", value: batch.user?.username || "-" },
-    { label: "Date", value: formatDate(createdAt) },
+    { label: "Date", value: formatDate(createdAt, true) },
     { label: "Items Count", value: String(batch.totalItems ?? batch.items?.length ?? 0) },
     {
       label: "Total Quantity",
@@ -88,7 +88,7 @@ export const exportTransferPDF = (batch) => {
     { label: "From", value: batch.fromWarehouse || "-" },
     { label: "To", value: batch.toWarehouse || "-" },
     { label: "Transferred By", value: batch.user?.username || "-" },
-    { label: "Date", value: formatDate(createdAt) },
+    { label: "Date", value: formatDate(createdAt, true) },
     { label: "Items Count", value: String(batch.totalItems ?? batch.items?.length ?? 0) },
     {
       label: "Total Quantity",
