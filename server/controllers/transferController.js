@@ -201,11 +201,17 @@ exports.deleteTransfer = async (req, res) => {
             sourceItem.userId = req.session.user.id;
             await sourceItem.save({ transaction: t });
           } else {
+            // Restore item with details from the destination item
             await InventoryItem.create(
               {
                 name: it.itemName,
                 code: it.itemCode,
                 quantity: parseInt(it.quantity),
+                price: destItem.price,
+                category: destItem.category,
+                condition: destItem.condition,
+                image: destItem.image,
+                note: destItem.note,
                 warehouse: batch.fromWarehouse,
                 userId: req.session.user.id,
               },
@@ -215,6 +221,7 @@ exports.deleteTransfer = async (req, res) => {
         }
 
         await StockTransferBatch.destroy({ where: { id }, transaction: t });
+        await t.commit();
 
     await logAudit(req, {
       action: 'transfer.delete',
