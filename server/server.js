@@ -34,7 +34,7 @@ app.use(
 
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "https://inventory-drinks.bountygroup.co.id",
+    origin: process.env.FRONTEND_URL,
     credentials: true,
   })
 );
