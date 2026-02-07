@@ -8,4 +8,5 @@
 #     - /bin/touch $DEPLOYPATH/tmp/restart.txt
 deployment:
   tasks:
-    - /bin/echo "hello"
+    - export DEPLOYPATH=/home/u1376460/api-inventory-drinks
+    - /bin/rsync -av --delete server/ $DEPLOYPATH/
