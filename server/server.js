@@ -34,7 +34,7 @@ app.use(
 
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: process.env.FRONTEND_URL || "https://inventory-drinks.bountygroup.co.id",
     credentials: true,
   })
 );
