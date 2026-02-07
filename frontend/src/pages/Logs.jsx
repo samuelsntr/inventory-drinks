@@ -70,7 +70,13 @@ export default function LogsPage() {
           action: debouncedAction || undefined,
           entityType: debouncedEntity || undefined,
           startDate: dateRange?.from ? dateRange.from.toISOString() : undefined,
-          endDate: dateRange?.to ? dateRange.to.toISOString() : undefined,
+          endDate: dateRange?.to
+            ? (() => {
+                const end = new Date(dateRange.to);
+                end.setHours(23, 59, 59, 999);
+                return end.toISOString();
+              })()
+            : undefined,
         },
       });
       setLogs(res.data.logs || []);
@@ -198,7 +204,7 @@ export default function LogsPage() {
                       <TableRow key={log.id}>
                         <TableCell>
                           {log.createdAt
-                            ? new Date(log.createdAt).toLocaleString()
+                            ? formatDate(log.createdAt, true)
                             : "-"}
                         </TableCell>
                         <TableCell>{log.username || "-"}</TableCell>

@@ -3,7 +3,7 @@
 export function formatDate(dateString, withTime = false) {
     const options = {
       day: "2-digit",
-      month: "long",
+      month: "short",
       year: "numeric",
       ...(withTime && {
         hour: "2-digit",

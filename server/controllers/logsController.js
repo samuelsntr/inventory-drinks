@@ -19,8 +19,7 @@ exports.getLogs = async (req, res) => {
     if (startDate || endDate) {
       const start = startDate ? new Date(startDate) : null;
       const end = endDate ? new Date(endDate) : null;
-      if (start) start.setHours(0, 0, 0, 0);
-      if (end) end.setHours(23, 59, 59, 999);
+      
       if (start && end) {
         where.createdAt = { [Op.between]: [start, end] };
       } else if (start) {

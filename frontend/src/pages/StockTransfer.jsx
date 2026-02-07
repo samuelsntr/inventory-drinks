@@ -79,7 +79,13 @@ export default function StockTransfer() {
           page: page,
           limit: 10,
           startDate: dateRange?.from ? dateRange.from.toISOString() : undefined,
-          endDate: dateRange?.to ? dateRange.to.toISOString() : undefined,
+          endDate: dateRange?.to
+            ? (() => {
+                const end = new Date(dateRange.to);
+                end.setHours(23, 59, 59, 999);
+                return end.toISOString();
+              })()
+            : undefined,
         },
       });
       setTransfers(res.data.items);
@@ -192,9 +198,7 @@ export default function StockTransfer() {
               ) : (
                 transfers.map((batch) => (
                   <TableRow key={batch.id}>
-                    <TableCell>
-                      {new Date(batch.createdAt).toLocaleString()}
-                    </TableCell>
+                    <TableCell>{formatDate(batch.createdAt, true)}</TableCell>
                     <TableCell>
                       {" "}
                       <Badge
@@ -308,7 +312,7 @@ export default function StockTransfer() {
                   </span>
                   <span className="font-medium">
                     {detailBatch.createdAt
-                      ? new Date(detailBatch.createdAt).toLocaleString()
+                      ? formatDate(detailBatch.createdAt, true)
                       : "-"}
                   </span>
                 </div>
