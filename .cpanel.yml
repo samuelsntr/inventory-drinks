@@ -9,4 +9,6 @@
 deployment:
   tasks:
     - export DEPLOYPATH=/home/u1376460/api-inventory-drinks
-    - /bin/rsync -av --delete server/ $DEPLOYPATH/
+    - /bin/rsync -av --delete \
+      --exclude uploads/ \
+      server/ $DEPLOYPATH/
